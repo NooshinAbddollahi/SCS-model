@@ -1,0 +1,624 @@
+/* File used to generate the Dorsal Column fiber.
+The parameter fiberD should be defined before calling this file.
+Parameters largely based on McIntyre, Richardson, Grill (MRG) Model of motor axon (see McIntyre et al., J. Neurophysiol., 2001) but with additional slow potassium afterhypolarizing (AHP) current to create adaptation effects seen in sensory fibers.  See AXNODE_ahp.mod for details.
+Author Organization: Boston Scientific Neuromodulation
+*/
+
+
+// ---------------------------  File 'makeDC' --------------------------------------------------------------------------------
+proc params_global(){
+	v_init = -80 // mV
+	celsius = 37 // C
+	dt = 0.005 // ms
+	tstop = 1000 // ms
+	
+	//morphological parameters - units um unless otherwise specified//
+
+	paralength1=3  
+	nodelength=1
+	space_p1=0.002  
+	space_p2=0.004
+	space_i=0.004
+	startx = 0
+	fiberD = 14.0
+	//electrical parameters - Consistent for both DC and DR fiber models//		
+	rhoa=0.7e6 //Ohm-um//
+	rhoe=5.0e6
+	mycm=0.1 //uF/cm2/lamella membrane//
+	mygm=0.001 //S/cm2/lamella membrane//
+	}
+	
+params_global()
+
+
+proc defineparams(){
+	//units um or count (i.e. nl, axonnodes) unless otherwise specified
+	if (fiberD==5.0)	{g=0.598 axonD=3.0 nodeD=1.5 paraD1=1.5 paraD2=3.0 deltax=454.4 paralength2=30.2 nl=65 axonnodes=10}
+	if (fiberD==5.5)	{g=0.603 axonD=3.3 nodeD=1.8 paraD1=1.8 paraD2=3.3 deltax=481.4 paralength2=34.0 nl=76 axonnodes=10}
+	if (fiberD==6.0)	{g=0.609 axonD=3.6 nodeD=2.0 paraD1=2.0 paraD2=3.6 deltax=534.8 paralength2=36.2 nl=85 axonnodes=10}
+	if (fiberD==6.5)	{g=0.616 axonD=4.0 nodeD=2.2 paraD1=2.2 paraD2=4.0 deltax=608.0 paralength2=37.4 nl=92 axonnodes=10}
+	if (fiberD==7.0)	{g=0.624 axonD=4.4 nodeD=2.3 paraD1=2.3 paraD2=4.4 deltax=694.5 paralength2=37.9 nl=97 axonnodes=10}
+	if (fiberD==7.5)	{g=0.634 axonD=4.8 nodeD=2.5 paraD1=2.5 paraD2=4.8 deltax=787.7 paralength2=38.1 nl=102 axonnodes=10}
+	if (fiberD==8.0)	{g=0.644 axonD=5.2 nodeD=2.6 paraD1=2.6 paraD2=5.2 deltax=881.2 paralength2=38.5 nl=105 axonnodes=10}
+	if (fiberD==8.5)	{g=0.656 axonD=5.6 nodeD=2.7 paraD1=2.7 paraD2=5.6 deltax=968.3 paralength2=39.4 nl=109 axonnodes=10}
+	if (fiberD==9.0)	{g=0.669 axonD=6.1 nodeD=2.9 paraD1=2.9 paraD2=6.1 deltax=1043.0 paralength2=41.2 nl=112 axonnodes=10}
+	if (fiberD==9.5)	{g=0.681 axonD=6.5 nodeD=3.1 paraD1=3.1 paraD2=6.5 deltax=1103.2 paralength2=43.7 nl=116 axonnodes=10}
+	if (fiberD==10.0)	{g=0.690 axonD=6.9 nodeD=3.3 paraD1=3.3 paraD2=6.9 deltax=1150.0 paralength2=46.0 nl=120 axonnodes=10}
+	if (fiberD==10.5)	{g=0.695 axonD=7.3 nodeD=3.4 paraD1=3.4 paraD2=7.3 deltax=1185.8 paralength2=47.6 nl=124 axonnodes=10}
+	if (fiberD==11.0)	{g=0.697 axonD=7.7 nodeD=3.6 paraD1=3.6 paraD2=7.7 deltax=1216.8 paralength2=48.8 nl=127 axonnodes=10}
+	if (fiberD==11.5)	{g=0.700 axonD=8.1 nodeD=3.7 paraD1=3.7 paraD2=8.1 deltax=1250.0 paralength2=50.0 nl=130 axonnodes=10}
+	if (fiberD==12.0)	{g=0.706 axonD=8.5 nodeD=3.9 paraD1=3.9 paraD2=8.5 deltax=1289.8 paralength2=51.6 nl=132 axonnodes=10}
+	if (fiberD==12.5)	{g=0.714 axonD=8.9 nodeD=4.1 paraD1=4.1 paraD2=8.9 deltax=1329.8 paralength2=53.2 nl=134 axonnodes=10}
+	if (fiberD==13.0)	{g=0.722 axonD=9.4 nodeD=4.3 paraD1=4.3 paraD2=9.4 deltax=1360.9 paralength2=54.4 nl=136 axonnodes=10}
+	if (fiberD==13.5)	{g=0.729 axonD=9.9 nodeD=4.5 paraD1=4.5 paraD2=9.9 deltax=1381.5 paralength2=55.3 nl=138 axonnodes=10}
+	if (fiberD==14.0)	{g=0.739 axonD=10.4 nodeD=4.7 paraD1=4.7 paraD2=10.4 deltax=1400.0 paralength2=56.0 nl=140 axonnodes=10}
+	Rpn0=(rhoa*.01)/(PI*((((nodeD/2)+space_p1)^2)-((nodeD/2)^2)))
+	Rpn1=(rhoa*.01)/(PI*((((paraD1/2)+space_p1)^2)-((paraD1/2)^2)))
+	Rpn2=(rhoa*.01)/(PI*((((paraD2/2)+space_p2)^2)-((paraD2/2)^2)))
+	Rpx=(rhoa*.01)/(PI*((((axonD/2)+space_i)^2)-((axonD/2)^2)))
+	interlength=(deltax-nodelength-(2*paralength1)-(2*paralength2))/6
+
+	//counts below
+	paranodes1 = (axonnodes-1)*2
+	paranodes2 = (axonnodes-1)*2
+	axoninter = (axonnodes-1)*6
+	axontotal = paranodes1 + paranodes2 + axoninter + axonnodes
+	}
+
+defineparams()
+	
+//topological parameters for DC fiber
+
+objref midSTIN, midFLUT, midMYSA, midnode 
+midSTIN= new Vector(axoninter)
+midFLUT= new Vector(paranodes2)
+midMYSA= new Vector(paranodes1)
+midnode= new Vector(axonnodes)
+	
+create node[axonnodes], MYSA[paranodes1], FLUT[paranodes2], STIN[axoninter]
+
+	for i=0,axonnodes-1 {
+		node[i]{					
+			nseg=1
+
+			//geom
+			pt3dadd(startx+i*deltax,0,0,nodeD)
+			pt3dadd(startx+i*deltax+nodelength,0,0,nodeD)
+			//end geom
+
+			begnode=startx+i*deltax
+			endnode=startx+i*deltax+nodelength
+			midnode.x[i]=begnode+((endnode-begnode)/2)
+			
+			Ra=rhoa/10000
+			cm=2
+			insert axnode_ahp	
+			//insert pas (in case passive version is desired for testing)
+			insert extracellular xraxial=Rpn0 xg=1e10 xc=0
+			
+			}
+		}
+
+	// Create MYSA - even
+	for (i=0; i<=paranodes1-1; i=i+2){
+		MYSA[i]{
+			nseg=1
+
+			//geom
+			pt3dadd(startx+(i/2)*deltax+nodelength,0,0,fiberD)
+			pt3dadd(startx+(i/2)*deltax+nodelength+paralength1,0,0,fiberD)
+			//end geom
+
+			begMYSA=startx+(i/2)*deltax+nodelength
+			endMYSA=startx+(i/2)*deltax+nodelength+paralength1 //3 um long vs. 1 um long node.
+			midMYSA.x[i]=begMYSA+((endMYSA-begMYSA)/2)
+			
+			Ra=rhoa*(1/(paraD1/fiberD)^2)/10000
+			cm=2*paraD1/fiberD
+			insert pas
+			g_pas=0.001*paraD1/fiberD		
+			e_pas=v_init
+			insert extracellular xraxial=Rpn1 xg=mygm/(nl*2) xc=mycm/(nl*2)
+			}
+	}
+	// Create MYSA - odd
+	for (i=1; i<=paranodes1-1; i=i+2){
+		MYSA[i]{
+			nseg=1
+
+			//geom
+			pt3dadd(startx+((i-1)/2)*deltax+nodelength+1*paralength1+2*paralength2+6*interlength,0,0,fiberD)
+			pt3dadd(startx+((i-1)/2)*deltax+nodelength+2*paralength1+2*paralength2+6*interlength,0,0,fiberD)
+			//end geom
+			
+			begMYSA=startx+((i-1)/2)*deltax+nodelength+1*paralength1+2*paralength2+6*interlength
+			endMYSA=startx+((i-1)/2)*deltax+nodelength+2*paralength1+2*paralength2+6*interlength
+			midMYSA.x[i]=begMYSA+((endMYSA-begMYSA)/2)
+
+			Ra=rhoa*(1/(paraD1/fiberD)^2)/10000
+			cm=2*paraD1/fiberD
+			insert pas
+			g_pas=0.001*paraD1/fiberD		
+			e_pas=v_init
+			insert extracellular xraxial=Rpn1 xg=mygm/(nl*2) xc=mycm/(nl*2)
+			}
+	}
+
+	// Create FLUT - even
+	for (i=0; i<=paranodes2-1; i=i+2){
+		FLUT[i]{
+			nseg=1
+
+			//geom
+			pt3dadd(startx+(i/2)*deltax+nodelength+paralength1,0,0,fiberD)
+			pt3dadd(startx+(i/2)*deltax+nodelength+paralength1+paralength2,0,0,fiberD)
+			//end geom
+			
+			begFLUT=startx+(i/2)*deltax+nodelength+paralength1
+			endFLUT=startx+(i/2)*deltax+nodelength+paralength1+paralength2
+			midFLUT.x[i]=begFLUT+((endFLUT-begFLUT)/2)
+
+			Ra=rhoa*(1/(paraD2/fiberD)^2)/10000
+			cm=2*paraD2/fiberD
+			insert pas
+			g_pas=0.0001*paraD2/fiberD		
+			e_pas=v_init
+			insert extracellular xraxial=Rpn2 xg=mygm/(nl*2) xc=mycm/(nl*2)
+			}
+	}
+	// Create FLUT - odd
+	for (i=1; i<=paranodes2-1; i=i+2){
+		FLUT[i]{
+			nseg=1
+
+			//geom
+			pt3dadd(startx+((i-1)/2)*deltax+nodelength+paralength1+paralength2+6*interlength,0,0,fiberD)
+			pt3dadd(startx+((i-1)/2)*deltax+nodelength+paralength1+2*paralength2+6*interlength,0,0,fiberD)
+			//end geom
+			
+			begFLUT=startx+((i-1)/2)*deltax+nodelength+paralength1+paralength2+6*interlength
+			endFLUT=startx+((i-1)/2)*deltax+nodelength+paralength1+2*paralength2+6*interlength
+			midFLUT.x[i]=begFLUT+((endFLUT-begFLUT)/2)
+
+			Ra=rhoa*(1/(paraD2/fiberD)^2)/10000
+			cm=2*paraD2/fiberD
+			insert pas
+			g_pas=0.0001*paraD2/fiberD		
+			e_pas=v_init
+			insert extracellular xraxial=Rpn2 xg=mygm/(nl*2) xc=mycm/(nl*2)
+			}
+	}
+
+	//Create STIN 1
+	for (i=0; i<=axoninter-1; i=i+6){
+		STIN[i]{
+			nseg=1
+
+			diam=fiberD
+			L=interlength
+
+			//geom
+			pt3dadd(startx+(i/6)*deltax+nodelength+paralength1+paralength2+0*interlength,0,0,fiberD)
+			pt3dadd(startx+(i/6)*deltax+nodelength+paralength1+paralength2+1*interlength,0,0,fiberD)
+			//end geom
+			
+			begSTIN=startx+(i/6)*deltax+nodelength+paralength1+paralength2+0*interlength
+			endSTIN=startx+(i/6)*deltax+nodelength+paralength1+paralength2+1*interlength
+			midSTIN.x[i]=begSTIN+((endSTIN-begSTIN)/2)
+			
+
+			Ra=rhoa*(1/(axonD/fiberD)^2)/10000
+			cm=2*axonD/fiberD
+			insert pas
+			g_pas=0.0001*axonD/fiberD
+			e_pas=v_init
+			insert extracellular xraxial=Rpx xg=mygm/(nl*2) xc=mycm/(nl*2)
+			}
+	}
+	//Create STIN 2
+	for (i=1; i<=axoninter-1; i=i+6){
+		STIN[i]{
+			nseg=1
+
+			diam=fiberD
+			L=interlength
+
+			//geom
+			pt3dadd(startx+((i-1)/6)*deltax+nodelength+paralength1+paralength2+1*interlength,0,0,fiberD)
+			pt3dadd(startx+((i-1)/6)*deltax+nodelength+paralength1+paralength2+2*interlength,0,0,fiberD)
+			//end geom
+
+			begSTIN=startx+((i-1)/6)*deltax+nodelength+paralength1+paralength2+1*interlength
+			endSTIN=startx+((i-1)/6)*deltax+nodelength+paralength1+paralength2+2*interlength
+			midSTIN.x[i]=begSTIN+((endSTIN-begSTIN)/2)
+			
+			
+			Ra=rhoa*(1/(axonD/fiberD)^2)/10000
+			cm=2*axonD/fiberD
+			insert pas
+			g_pas=0.0001*axonD/fiberD
+			e_pas=v_init
+			insert extracellular xraxial=Rpx xg=mygm/(nl*2) xc=mycm/(nl*2)
+			}
+	}
+	//Create STIN 3
+	for (i=2; i<=axoninter-1; i=i+6){
+		STIN[i]{
+			nseg=1
+
+			diam=fiberD
+			L=interlength
+
+			//geom
+			pt3dadd(startx+((i-2)/6)*deltax+nodelength+paralength1+paralength2+2*interlength,0,0,fiberD)
+			pt3dadd(startx+((i-2)/6)*deltax+nodelength+paralength1+paralength2+3*interlength,0,0,fiberD)
+			//end geom
+
+			begSTIN=startx+((i-2)/6)*deltax+nodelength+paralength1+paralength2+2*interlength
+			endSTIN=startx+((i-2)/6)*deltax+nodelength+paralength1+paralength2+3*interlength
+			midSTIN.x[i]=begSTIN+((endSTIN-begSTIN)/2)
+			
+			
+			Ra=rhoa*(1/(axonD/fiberD)^2)/10000
+			cm=2*axonD/fiberD
+			insert pas
+			g_pas=0.0001*axonD/fiberD
+			e_pas=v_init
+			insert extracellular xraxial=Rpx xg=mygm/(nl*2) xc=mycm/(nl*2)
+			}
+	}
+	//Create STIN 4
+	for (i=3; i<=axoninter-1; i=i+6){
+		STIN[i]{
+			nseg=1
+
+			diam=fiberD
+			L=interlength
+
+			//geom
+			pt3dadd(startx+((i-3)/6)*deltax+nodelength+paralength1+paralength2+3*interlength,0,0,fiberD)
+			pt3dadd(startx+((i-3)/6)*deltax+nodelength+paralength1+paralength2+4*interlength,0,0,fiberD)
+			//end geom
+			
+			begSTIN=startx+((i-3)/6)*deltax+nodelength+paralength1+paralength2+3*interlength
+			endSTIN=startx+((i-3)/6)*deltax+nodelength+paralength1+paralength2+4*interlength
+			midSTIN.x[i]=begSTIN+((endSTIN-begSTIN)/2)
+			
+			
+			Ra=rhoa*(1/(axonD/fiberD)^2)/10000
+			cm=2*axonD/fiberD
+			insert pas
+			g_pas=0.0001*axonD/fiberD
+			e_pas=v_init
+			insert extracellular xraxial=Rpx xg=mygm/(nl*2) xc=mycm/(nl*2)
+			}
+	}
+	//Create STIN 5
+	for (i=4; i<=axoninter-1; i=i+6){
+		STIN[i]{
+			nseg=1
+
+			diam=fiberD
+			L=interlength
+
+			//geom
+			pt3dadd(startx+((i-4)/6)*deltax+nodelength+paralength1+paralength2+4*interlength,0,0,fiberD)
+			pt3dadd(startx+((i-4)/6)*deltax+nodelength+paralength1+paralength2+5*interlength,0,0,fiberD)
+			//end geom
+			
+			
+			begSTIN=startx+((i-4)/6)*deltax+nodelength+paralength1+paralength2+4*interlength
+			endSTIN=startx+((i-4)/6)*deltax+nodelength+paralength1+paralength2+5*interlength
+			midSTIN.x[i]=begSTIN+((endSTIN-begSTIN)/2)
+			
+			
+
+			Ra=rhoa*(1/(axonD/fiberD)^2)/10000
+			cm=2*axonD/fiberD
+			insert pas
+			g_pas=0.0001*axonD/fiberD
+			e_pas=v_init
+			insert extracellular xraxial=Rpx xg=mygm/(nl*2) xc=mycm/(nl*2)
+			}
+	}
+	//Create STIN 6
+	for (i=5; i<=axoninter-1; i=i+6){
+		STIN[i]{
+			nseg=1
+
+			diam=fiberD
+			L=interlength
+
+			//geom
+			pt3dadd(startx+((i-5)/6)*deltax+nodelength+paralength1+paralength2+5*interlength,0,0,fiberD)
+			pt3dadd(startx+((i-5)/6)*deltax+nodelength+paralength1+paralength2+6*interlength,0,0,fiberD)
+			//end geom
+			
+			begSTIN=startx+((i-5)/6)*deltax+nodelength+paralength1+paralength2+5*interlength
+			endSTIN=startx+((i-5)/6)*deltax+nodelength+paralength1+paralength2+6*interlength
+			midSTIN.x[i]=begSTIN+((endSTIN-begSTIN)/2)
+			
+
+			Ra=rhoa*(1/(axonD/fiberD)^2)/10000
+			cm=2*axonD/fiberD
+			insert pas
+			g_pas=0.0001*axonD/fiberD
+			e_pas=v_init
+			insert extracellular xraxial=Rpx xg=mygm/(nl*2) xc=mycm/(nl*2)
+			}
+	}
+	
+	for i=0, axonnodes-2 {
+		connect MYSA[2*i](0), node[i](1)
+		connect FLUT[2*i](0), MYSA[2*i](1)
+		connect STIN[6*i](0), FLUT[2*i](1)
+		connect STIN[6*i+1](0), STIN[6*i](1)
+		connect STIN[6*i+2](0), STIN[6*i+1](1)
+		connect STIN[6*i+3](0), STIN[6*i+2](1)
+		connect STIN[6*i+4](0), STIN[6*i+3](1)	
+		connect STIN[6*i+5](0), STIN[6*i+4](1)	
+		connect FLUT[2*i+1](0), STIN[6*i+5](1)
+		connect MYSA[2*i+1](0), FLUT[2*i+1](1)
+		connect node[i+1](0), MYSA[2*i+1](1)	
+		}
+	// END OF --- CREATE MODEL GEOMETRY -----
+
+	objref secDC, node_clamps[axonnodes]
+	
+
+	// Create a SectionList
+		secDC = new SectionList()
+		ncounter = 0
+		forsec "node" {
+			secDC.append()
+			node_clamps[ncounter] = new IClamp(0.5)
+			node_clamps[ncounter].dur = 1e9
+			node_clamps[ncounter].del = 0
+			ncounter +=1
+		}
+			
+
+		forsec "MYSA" secDC.append()
+		forsec "FLUT" secDC.append()
+		forsec "STIN" secDC.append()	
+
+		forsec "node_" secDC.remove()	//Remove any sections that may pertain to a DR fiber
+		forsec "MYSA_" secDC.remove()
+		forsec "FLUT_" secDC.remove()
+		forsec "STIN_" secDC.remove()
+	// end of create a SectionList
+
+
+
+	// INSERT "xtra" mechanisms -- for position encoding coupled to extracellular stimulation.  Note that extracellular is already inserted.
+	forsec secDC {
+		insert xtra 
+	}
+
+
+	// set pointers (in DR model) ex_xtra to e_extracellular -> drive stimulation through e_extracellular
+	forsec secDC {
+	    if (ismembrane("xtra")) {
+		for (x) if (x!=0 && x!=1) {				// Includes all membrane attachment points, but not seg-to-seg attachments
+			setpointer im_xtra(x), i_membrane(x)  		
+			setpointer ex_xtra(x), e_extracellular(x)
+		}
+	    }
+	}
+
+	finitialize(v_init)
+	fcurrent()	
+	
+objref test_stim, noise_stim
+	
+	
+objref wave_file, OU_file, Ve_file, dt_stimwave, tstop_stimwave, stimfreq_stimwave, numel_stimwave, stimwave, OUwave, myplot, segments_extracellular
+strdef myfile, myfileOU, myFile_Ve
+
+proc genwavNonIdeal(){local myamp, temp
+	/*
+	Description:
+	- Read in arbitrary waveform from ASCII file. ASCII file must have 4 lines:
+	1) Time step in ms
+	2) Total waveform duration aka sim time in ms
+	3) Number of values in the waveform 
+	4) Waveform values, white-space delimited (test with spaces)
+	- Ensures that the dt & tstop values used to generate the waveform matches the NEURON parameters.
+	- Plot the arbitrary waveform.
+	
+	NOTE: The waveform is scaled to the desired amplitude and "played" in the wrapper, not here.
+	*/
+	
+	// Open the file containing the waveform
+	strdef myfile
+	sprint(myfile,"Active_1000Hz_40usOn_tstop6000ms_05-Nov-2019.txt") //INPUT:: Change this file to change the waveform.  Right now, configured for perfect symmetric biphasic (i.e. "active") 1 kHz
+	print myfile
+
+	wave_file = new File()
+	wave_file.ropen(myfile)
+	
+	// Read in the time step and total stim time used for the waveform generation
+	dt_stimwave = new Vector(1)
+	dt_stimwave.scanf(wave_file,1)
+	tstop_stimwave = new Vector(1)
+	tstop_stimwave.scanf(wave_file,1)
+	
+	// Check that the time step and total sim time match the NEURON parameters
+	if (dt_stimwave.x[0] != dt) {
+		print "WARNING: dt of arbitrary waveform does not match NEURON dt"
+	}
+	if (tstop_stimwave.x[0] != tstop) {
+		print "WARNING: tstop of arbitrary waveform does not match NEURON tstop"
+	}
+	
+	// Read in the arbitrary waveform.  tstop in OU simulations should be less than tstop in SCS waveform.
+	numel_stimwave = new Vector(2)
+	numel_stimwave.scanf(wave_file,1)
+	temp = 1000/dt+1
+    stimwave = new Vector(temp) //normally numel_stimwave.x[0]
+	stimwave.scanf(wave_file,temp)
+
+	wave_file.close()
+	
+	sprint(myFile_Ve, "Extracellular_1mm_0_offset_1mA.txt")
+	Ve_file = new File()
+	Ve_file.ropen(myFile_Ve)
+	segments_extracellular = new Vector(axontotal)//vector of 1 mA normalized voltages BY SEGMENT.
+	segments_extracellular.scanf(Ve_file, axontotal)
+	Ve_file.close()
+
+}
+
+objref stimwave_scaled, OUwave_scaled, Comp_Signal
+genwavNonIdeal()
+	
+proc advance(){
+	if (t == 0){
+		tidx = 0
+		} else {
+		tidx = t/dt
+		}
+	sidx = 0
+	
+	forsec secDC {
+		if (ismembrane("extracellular")) {
+			
+			e_extracellular = test_stim.amp*segments_extracellular.x[sidx] // scaled point source stim by segment + common mode OU Wave.
+			sidx = sidx + 1
+			}
+				
+			}
+
+	fadvance()
+
+}
+
+	
+//dummy clamp	
+test_stim = new IClamp()
+create electrode1	
+	electrode1{ //first node in fiber near edge = intracellular "test" stimulus for ECAP templates.  Node should be far enough away from a given electrode that short intracellular stimulus should not affect much.
+		test_stim.loc(0.5)
+		test_stim.del = 0
+		test_stim.dur = 1000 //ms
+		test_stim.amp = 0 // nA. Initialize at 0 for extracellular stimulation
+	}	
+
+//dummy clamp for OU Noise
+
+		
+
+objref node_v[axonnodes], node_currents[axonnodes], node_APs, node_APVec
+objref gNaVec, tau_h_Vec, amp_vec, OUStr_Vec
+
+gNaVec = new Vector(5)
+gNaVec.x[0] = 2
+gNaVec.x[1] = 2.25
+gNaVec.x[2] = 2.5
+gNaVec.x[3] = 2.75
+gNaVec.x[4] = 3	
+
+tau_h_Vec = new Vector(2) //multipliative to 1/(a+b) on h.  Higher values -- longer/slower tau.
+tau_h_Vec.x[0] = 2.25//1.0
+tau_h_Vec.x[1] = 2.25//1.75
+
+OUStr_Vec = new Vector(2)
+OUStr_Vec.x[0] = 0// sigma = 0.  No noise control.
+OUStr_Vec.x[1] = 0.8// sigma = 0.01 times this value.  Same noise file is applied to ALL nodes, but distinct files are applied to distinct fibers.
+
+
+amp_vec = new Vector(6)
+amp_vec.x[0] = 0 // control to ensure that noise isn't causing fiber to fire.
+amp_vec.x[1] = 0.16 
+amp_vec.x[2] = 0.18// short PW waveforms need LOTS of amplitude to get going.
+amp_vec.x[3] = 0.2
+amp_vec.x[4] = 0.22
+amp_vec.x[5] = 0.24
+
+
+	
+proc run_me(){ local gNaTemp, gKTemp //Note that at all but last 2-3 nodes, single spike AP looks exactly the same save for space distortions.  Will need to save entire space X time file, as AP propagation in 5 us does NOT necessarily look like space propagation over internodal length.
+			   //To avoid artifacts due to intracellular stimulation and edge effects on axon, we will make axons 20 nodes longer than proscribed and truncate axons to nodes 11 to (axonnodes-10).  We will also truncate first (few ms) of simulations as is appropriate for AP to propagate to Node 11.
+	
+	gNaTemp = $1
+	noise_fac_temp = $2
+	
+	for M = 0, (axonnodes-1){ 
+	
+		node_v[M] = new Vector()
+		node_v[M].record(&node[M].v(0.5))
+		
+	}
+	forsec "node" gahpbar_axnode_ahp=0.5
+	forsec "node" tau_h_mod_axnode_ahp = 2.25
+	forsec "node" gnabar_axnode_ahp=gNaTemp 
+	forsec "node" gkbar_axnode_ahp=0.08*(gNaTemp/3.0) //normalize to gNa to prevent from overwhelming gNa
+	forsec "node" gl_axnode_ahp = 0.007*(gNaTemp/3.0) //normalize to gNa to prevent from overwhelming gNa.
+	forsec "node" tau_ahp_axnode_ahp = 200
+	
+	print gnabar_axnode_ahp, " ", gkbar_axnode_ahp, " ", gl_axnode_ahp
+	access node[axonnodes-1]
+	node_APs = new APCount(0.5)
+	node_APVec = new Vector()
+	node_APs.record(node_APVec)
+	run()	
+}
+
+objref totalcurrents[axonnodes]
+objref savefile
+
+objref voltfile, APFile, voltfile2
+
+proc save_v(){ // save membrane voltages for spiking analysis.
+	strdef filestring2
+	sprint(filestring2, "AxonV_MRGFULL_%.2f_um_%.2f_NaScaled_%.2f_OU_%.2f_gbar0.5_1kHz_Tau_0p5_AHPLastNode.dat", fiberD, myamp_temp, gNaVal, OU_modval)
+	voltfile = new File()
+	voltfile.wopen(filestring2)
+	voltfile.printf("%2f %2f\n", axonnodes ,tstop/dt)
+	node_v[axonnodes-1].printf(voltfile, "%12f") 
+	voltfile.close()
+	
+	strdef filestring3 // save NEURON-detected action potential times/counts for spiking analysis.
+	sprint(filestring3, "AxonV_MRGFULL_%.2f_um_%.2f_NaScaled_%.2f_OU_%.2f_gbar0.5_1kHz_Tau_0p5_APCount.dat", fiberD, myamp_temp, gNaVal, OU_modval)
+	voltfile2 = new File()
+	voltfile2.wopen(filestring3)
+	voltfile2.printf("%2f %2f\n", axonnodes ,tstop/dt)
+	node_APVec.printf(voltfile2, "%.6f\t") 
+	voltfile2.close()
+	}
+
+proc shell(){ local mm, ii, jj, OUCounter, temp2
+	for jj = 0, 1{
+		OUCounter = 1	
+		for mm = 0, 5	{
+		myamp_temp = amp_vec.x[mm] //from prior testing, this value of Istim generated bursting.  Test gNa and gKs in MRG model to assess sensitivity of bursting intraburst and interburst to these parameters.
+			for ii = 0, 4{ // Ornstein-Uhlenbeck injection.
+				strdef myfileOU
+				sprint(myfileOU, "OUNoise_MRG_Base_0p01_0p5tau_%.0f.txt", OUCounter)
+				OU_file = new File()
+				OU_file.ropen(myfileOU)
+				temp2 = 1000/dt+1
+				OUwave = new Vector(temp2)
+				OUwave.scanf(OU_file, temp2)
+			
+				gNaVal = gNaVec.x[ii]
+				OU_modval = OUStr_Vec.x[jj]		
+				print gNaVal, " ", OU_modval
+				stimwave_scaled = stimwave.c.mul(myamp_temp)
+				OUwave_scaled = OUwave.c.mul(OU_modval)
+				kk = 0
+				forsec "node" {
+					OUwave_scaled.play(&node_clamps[kk].amp, dt)
+					kk +=1
+					}
+				stimwave_scaled.play(&test_stim.amp, dt)
+				run_me(gNaVal, OU_modval)
+				save_v()
+				objref OU_file, OUwave, OUwave_scaled // wipe variables to prevent inconvenient concatenation effects.
+				OUCounter+=1
+			}
+		}
+	}
+}
+
+// ------------------------------  End of 'makeDC_AHP_VariableNoise_CLEAN' --------------------------------------------------------------------------------
